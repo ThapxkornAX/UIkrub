@@ -1,0 +1,435 @@
+local Library = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+-- การตั้งค่าธีม
+local Theme = {
+	Background = Color3.fromRGB(15, 15, 15),
+	CardBackground = Color3.fromRGB(20, 20, 20),
+	Accent = Color3.fromRGB(58, 123, 238),
+	TextWhite = Color3.fromRGB(255, 255, 255),
+	TextGray = Color3.fromRGB(150, 150, 150),
+	Outline = Color3.fromRGB(40, 40, 40)
+}
+
+-- ฟังก์ชัน Utility สำหรับลากหน้าต่าง
+local function MakeDraggable(topbarobject, object)
+	local Dragging = nil
+	local DragInput = nil
+	local DragStart = nil
+	local StartPosition = nil
+
+	topbarobject.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			Dragging = true
+			DragStart = input.Position
+			StartPosition = object.Position
+
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					Dragging = false
+				end
+			end)
+		end
+	end)
+
+	topbarobject.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			DragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if input == DragInput and Dragging then
+			local Delta = input.Position - DragStart
+			object.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
+		end
+	end)
+end
+
+-- === Start Library Functions ===
+
+function Library:Window(options)
+	local WindowName = options.Name or "Xero Hub Beta"
+	local LogoId = options.Logo or "rbxassetid://7072724456"
+	
+	-- Main ScreenGui
+	local ScreenGui = Instance.new("ScreenGui")
+	ScreenGui.Name = "XeroHubLib"
+	ScreenGui.Parent = game:GetService("CoreGui") -- หรือ game.Players.LocalPlayer.PlayerGui
+	
+	-- Main Frame
+	local MainFrame = Instance.new("Frame")
+	MainFrame.Name = "MainFrame"
+	MainFrame.Size = UDim2.new(0, 600, 0, 450)
+	MainFrame.Position = UDim2.new(0.5, -300, 0.5, -225)
+	MainFrame.BackgroundColor3 = Theme.Background
+	MainFrame.BorderSizePixel = 0
+	MainFrame.Parent = ScreenGui
+	
+	-- TopBar
+	local TopBar = Instance.new("Frame")
+	TopBar.Size = UDim2.new(1, 0, 0, 40)
+	TopBar.BackgroundColor3 = Theme.Accent
+	TopBar.BorderSizePixel = 0
+	TopBar.Parent = MainFrame
+	
+	MakeDraggable(TopBar, MainFrame)
+	
+	local TitleLabel = Instance.new("TextLabel")
+	TitleLabel.Text = WindowName
+	TitleLabel.Font = Enum.Font.GothamBold
+	TitleLabel.TextSize = 16
+	TitleLabel.TextColor3 = Theme.TextWhite
+	TitleLabel.BackgroundTransparency = 1
+	TitleLabel.Size = UDim2.new(0, 200, 1, 0)
+	TitleLabel.Position = UDim2.new(0, 40, 0, 0)
+	TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+	TitleLabel.Parent = TopBar
+
+	local LogoIcon = Instance.new("ImageLabel")
+	LogoIcon.Image = LogoId
+	LogoIcon.BackgroundTransparency = 1
+	LogoIcon.Size = UDim2.new(0, 20, 0, 20)
+	LogoIcon.Position = UDim2.new(0, 10, 0.5, -10)
+	LogoIcon.Parent = TopBar
+	
+	-- Container for Tabs Pages
+	local PagesFolder = Instance.new("Frame")
+	PagesFolder.Name = "Pages"
+	PagesFolder.Size = UDim2.new(1, 0, 1, -40)
+	PagesFolder.Position = UDim2.new(0, 0, 0, 40)
+	PagesFolder.BackgroundTransparency = 1
+	PagesFolder.Parent = MainFrame
+	
+	-- Container for Tab Buttons
+	local TabButtonContainer = Instance.new("Frame")
+	TabButtonContainer.Size = UDim2.new(0, 300, 1, 0)
+	TabButtonContainer.Position = UDim2.new(0, 220, 0, 0)
+	TabButtonContainer.BackgroundTransparency = 1
+	TabButtonContainer.Parent = TopBar
+	
+	local TabListLayout = Instance.new("UIListLayout")
+	TabListLayout.FillDirection = Enum.FillDirection.Horizontal
+	TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	TabListLayout.Padding = UDim.new(0, 5)
+	TabListLayout.Parent = TabButtonContainer
+
+	local FirstTab = true
+	local WindowFuncs = {}
+
+	function WindowFuncs:Tab(text)
+		local Tab = {}
+		
+		-- Tab Button
+		local TabBtn = Instance.new("TextButton")
+		TabBtn.Text = text
+		TabBtn.Font = Enum.Font.GothamBold
+		TabBtn.TextSize = 14
+		TabBtn.TextColor3 = Color3.fromRGB(200,200,200)
+		TabBtn.BackgroundTransparency = 1
+		TabBtn.Size = UDim2.new(0, 80, 1, 0)
+		TabBtn.Parent = TabButtonContainer
+		
+		local Underline = Instance.new("Frame")
+		Underline.Size = UDim2.new(0, 0, 0, 3) -- เริ่มต้นความกว้าง 0
+		Underline.Position = UDim2.new(0.5, 0, 1, -3)
+		Underline.AnchorPoint = Vector2.new(0.5, 0)
+		Underline.BackgroundColor3 = Theme.TextWhite
+		Underline.BorderSizePixel = 0
+		Underline.Parent = TabBtn
+		
+		-- Page Container
+		local Page = Instance.new("Frame")
+		Page.Name = text .. "Page"
+		Page.Size = UDim2.new(1, -20, 1, -20)
+		Page.Position = UDim2.new(0, 10, 0, 10)
+		Page.BackgroundTransparency = 1
+		Page.Visible = false
+		Page.Parent = PagesFolder
+		
+		-- Layout for Page (Columns)
+		local Grid = Instance.new("UIGridLayout")
+		Grid.CellSize = UDim2.new(0.485, 0, 1, 0)
+		Grid.CellPadding = UDim2.new(0.03, 0, 0, 0)
+		Grid.Parent = Page
+		
+		local LeftColumn = Instance.new("Frame")
+		LeftColumn.BackgroundTransparency = 1
+		LeftColumn.Name = "LeftColumn"
+		LeftColumn.Parent = Page
+		local LLayout = Instance.new("UIListLayout", LeftColumn)
+		LLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		LLayout.Padding = UDim.new(0, 10)
+		local LPad = Instance.new("UIPadding", LeftColumn)
+		LPad.PaddingTop = UDim.new(0,5)
+
+		local RightColumn = Instance.new("Frame")
+		RightColumn.BackgroundTransparency = 1
+		RightColumn.Name = "RightColumn"
+		RightColumn.Parent = Page
+		local RLayout = Instance.new("UIListLayout", RightColumn)
+		RLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		RLayout.Padding = UDim.new(0, 10)
+		local RPad = Instance.new("UIPadding", RightColumn)
+		RPad.PaddingTop = UDim.new(0,5)
+		
+		-- Tab Switch Logic
+		local function Activate()
+			-- Reset all tabs
+			for _, v in pairs(PagesFolder:GetChildren()) do v.Visible = false end
+			for _, v in pairs(TabButtonContainer:GetChildren()) do
+				if v:IsA("TextButton") then
+					TweenService:Create(v, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(200,200,200)}):Play()
+					TweenService:Create(v:FindFirstChild("Frame"), TweenInfo.new(0.3), {Size = UDim2.new(0,0,0,3)}):Play()
+				end
+			end
+			-- Activate current
+			Page.Visible = true
+			TweenService:Create(TabBtn, TweenInfo.new(0.3), {TextColor3 = Theme.TextWhite}):Play()
+			TweenService:Create(Underline, TweenInfo.new(0.3), {Size = UDim2.new(0.8,0,0,3)}):Play()
+		end
+		
+		TabBtn.MouseButton1Click:Connect(Activate)
+		
+		if FirstTab then
+			Activate()
+			FirstTab = false
+		end
+		
+		-- Section Creating Function
+		function Tab:Section(options)
+			local SecTitle = options.Title or "Section"
+			local Side = options.Side or "Left" -- "Left" or "Right"
+			
+			local ParentColumn = (Side == "Right") and RightColumn or LeftColumn
+			
+			local Panel = Instance.new("Frame")
+			Panel.BackgroundColor3 = Theme.CardBackground
+			Panel.BorderSizePixel = 0
+			Panel.Size = UDim2.new(1, 0, 0, 0) -- Auto Size later
+			Panel.Parent = ParentColumn
+			
+			local Stroke = Instance.new("UIStroke", Panel)
+			Stroke.Color = Theme.Outline
+			Stroke.Thickness = 1
+			
+			local Corner = Instance.new("UICorner", Panel)
+			Corner.CornerRadius = UDim.new(0, 6)
+			
+			local SectionList = Instance.new("UIListLayout")
+			SectionList.Padding = UDim.new(0, 8)
+			SectionList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+			SectionList.SortOrder = Enum.SortOrder.LayoutOrder
+			SectionList.Parent = Panel
+			
+			local Padding = Instance.new("UIPadding")
+			Padding.PaddingTop = UDim.new(0, 10)
+			Padding.PaddingBottom = UDim.new(0, 10)
+			Padding.PaddingLeft = UDim.new(0, 10)
+			Padding.PaddingRight = UDim.new(0, 10)
+			Padding.Parent = Panel
+			
+			-- Auto Resize Panel
+			SectionList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+				Panel.Size = UDim2.new(1, 0, 0, SectionList.AbsoluteContentSize.Y + 25)
+			end)
+			
+			-- Title
+			local Label = Instance.new("TextLabel")
+			Label.Text = "- " .. SecTitle .. " -"
+			Label.TextColor3 = Theme.Accent
+			Label.Font = Enum.Font.GothamBold
+			Label.TextSize = 12
+			Label.BackgroundTransparency = 1
+			Label.Size = UDim2.new(1, 0, 0, 15)
+			Label.Parent = Panel
+			
+			local Elements = {}
+			
+			-- BUTTON
+			function Elements:Button(text, callback)
+				local Btn = Instance.new("TextButton")
+				Btn.Text = text
+				Btn.Font = Enum.Font.GothamBold
+				Btn.TextSize = 12
+				Btn.Size = UDim2.new(1, 0, 0, 30)
+				Btn.BackgroundColor3 = Theme.Background
+				Btn.TextColor3 = Theme.TextWhite
+				Btn.Parent = Panel
+				
+				local UICorner = Instance.new("UICorner", Btn)
+				UICorner.CornerRadius = UDim.new(0, 4)
+				
+				local UIStroke = Instance.new("UIStroke", Btn)
+				UIStroke.Color = Theme.Accent
+				UIStroke.Thickness = 1
+				UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+				
+				Btn.MouseButton1Click:Connect(function()
+					pcall(callback)
+					-- Animation Click
+					TweenService:Create(Btn, TweenInfo.new(0.1), {Size = UDim2.new(0.95,0,0,28)}):Play()
+					wait(0.1)
+					TweenService:Create(Btn, TweenInfo.new(0.1), {Size = UDim2.new(1,0,0,30)}):Play()
+				end)
+			end
+			
+			-- TOGGLE
+			function Elements:Toggle(text, default, callback)
+				local Toggled = default or false
+				
+				local Frame = Instance.new("TextButton") -- ใช้ปุ่มครอบเพื่อกดตรงไหนก็ได้
+				Frame.Text = ""
+				Frame.BackgroundTransparency = 1
+				Frame.Size = UDim2.new(1, 0, 0, 30)
+				Frame.Parent = Panel
+				
+				local Label = Instance.new("TextLabel")
+				Label.Text = text
+				Label.TextColor3 = Theme.TextWhite
+				Label.Font = Enum.Font.GothamMedium
+				Label.TextSize = 13
+				Label.TextXAlignment = Enum.TextXAlignment.Left
+				Label.BackgroundTransparency = 1
+				Label.Size = UDim2.new(0.7, 0, 1, 0)
+				Label.Parent = Frame
+				
+				local Circle = Instance.new("Frame")
+				Circle.Size = UDim2.new(0, 20, 0, 20)
+				Circle.Position = UDim2.new(1, -25, 0.5, -10)
+				Circle.BackgroundColor3 = Toggled and Theme.Accent or Theme.Background
+				Circle.Parent = Frame
+				
+				local CStroke = Instance.new("UIStroke", Circle)
+				CStroke.Color = Theme.Accent
+				CStroke.Thickness = 1
+				
+				local CCorner = Instance.new("UICorner", Circle)
+				CCorner.CornerRadius = UDim.new(1, 0)
+				
+				local function UpdateToggle()
+					Toggled = not Toggled
+					local TargetColor = Toggled and Theme.Accent or Theme.Background
+					TweenService:Create(Circle, TweenInfo.new(0.2), {BackgroundColor3 = TargetColor}):Play()
+					pcall(callback, Toggled)
+				end
+				
+				Frame.MouseButton1Click:Connect(UpdateToggle)
+			end
+			
+			-- SLIDER
+			function Elements:Slider(text, min, max, default, callback)
+				local Value = default or min
+				
+				local Frame = Instance.new("Frame")
+				Frame.BackgroundTransparency = 1
+				Frame.Size = UDim2.new(1, 0, 0, 50)
+				Frame.Parent = Panel
+
+				local Label = Instance.new("TextLabel")
+				Label.Text = text
+				Label.TextColor3 = Theme.TextWhite
+				Label.Font = Enum.Font.GothamBold
+				Label.TextSize = 12
+				Label.TextXAlignment = Enum.TextXAlignment.Left
+				Label.BackgroundTransparency = 1
+				Label.Size = UDim2.new(1, 0, 0, 20)
+				Label.Parent = Frame
+				
+				local Container = Instance.new("Frame")
+				Container.Size = UDim2.new(1, 0, 0, 30)
+				Container.Position = UDim2.new(0,0,0,20)
+				Container.BackgroundTransparency = 1
+				Container.Parent = Frame
+				
+				local Border = Instance.new("Frame")
+				Border.Size = UDim2.new(1, 0, 1, 0)
+				Border.BackgroundColor3 = Color3.fromRGB(0,0,0)
+				Border.BackgroundTransparency = 1
+				Border.Parent = Container
+				
+				local Stroke = Instance.new("UIStroke", Border)
+				Stroke.Color = Theme.Accent
+				Stroke.Thickness = 1
+				local Corner = Instance.new("UICorner", Border)
+				Corner.CornerRadius = UDim.new(0, 6)
+				
+				local FillBar = Instance.new("Frame")
+				FillBar.Size = UDim2.new(0.7, 0, 0, 2)
+				FillBar.Position = UDim2.new(0, 10, 0.5, 0)
+				FillBar.BackgroundColor3 = Color3.fromRGB(80,80,80)
+				FillBar.BorderSizePixel = 0
+				FillBar.Parent = Border
+				
+				local Knob = Instance.new("Frame")
+				Knob.Size = UDim2.new(0, 10, 0, 10)
+				Knob.AnchorPoint = Vector2.new(0.5, 0.5)
+				Knob.BackgroundColor3 = Theme.TextWhite
+				Knob.Parent = FillBar
+				local KCorner = Instance.new("UICorner", Knob)
+				KCorner.CornerRadius = UDim.new(1, 0)
+				
+				local NumBox = Instance.new("Frame")
+				NumBox.Size = UDim2.new(0, 30, 0, 15)
+				NumBox.Position = UDim2.new(1, -40, 0.5, -7.5)
+				NumBox.BackgroundColor3 = Theme.Background
+				NumBox.Parent = Border
+				local NStroke = Instance.new("UIStroke", NumBox)
+				NStroke.Color = Theme.Accent
+				local NCorner = Instance.new("UICorner", NumBox)
+				NCorner.CornerRadius = UDim.new(0, 4)
+				
+				local NumTxt = Instance.new("TextLabel")
+				NumTxt.Text = tostring(Value)
+				NumTxt.Size = UDim2.new(1,0,1,0)
+				NumTxt.BackgroundTransparency = 1
+				NumTxt.TextColor3 = Theme.TextWhite
+				NumTxt.Font = Enum.Font.Gotham
+				NumTxt.TextSize = 10
+				NumTxt.Parent = NumBox
+				
+				local Dragging = false
+				
+				local function SetValue(v)
+					local Percent = math.clamp((v - min) / (max - min), 0, 1)
+					Knob.Position = UDim2.new(Percent, 0, 0.5, 0)
+					NumTxt.Text = tostring(math.floor(v))
+					pcall(callback, math.floor(v))
+				end
+				
+				-- Initial Set
+				SetValue(Value)
+				
+				FillBar.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						Dragging = true
+					end
+				end)
+				
+				UserInputService.InputChanged:Connect(function(input)
+					if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+						local MousePos = input.Position.X
+						local BarPos = FillBar.AbsolutePosition.X
+						local BarSize = FillBar.AbsoluteSize.X
+						local Percent = math.clamp((MousePos - BarPos) / BarSize, 0, 1)
+						local NewValue = min + (max - min) * Percent
+						SetValue(NewValue)
+					end
+				end)
+				
+				UserInputService.InputEnded:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						Dragging = false
+					end
+				end)
+			end
+
+			return Elements
+		end
+		return Tab
+	end
+	return WindowFuncs
+end
+
+return Library
