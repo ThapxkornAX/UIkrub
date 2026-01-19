@@ -5877,6 +5877,8 @@ function MacLib:Demo()
 	MacLib:LoadAutoLoadConfig()
 end
 
+return MacLib
+
 -- [[ 1. ตั้งค่าพื้นฐาน ]]
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -5973,6 +5975,3 @@ MainBtn.MouseButton1Click:Connect(function()
         warn("MacLib Window not found! Make sure your variable is named 'Window'")
     end
 end)
-
-return MacLib
-
